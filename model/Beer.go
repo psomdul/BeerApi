@@ -1,16 +1,15 @@
 package model
 
 import (
-	// "time"
-	
 	"gorm.io/gorm"
 )
+
 type Beers struct {
 	gorm.Model
-	beer_name  			string
-	type_id 			int
-	description 		string
-	created_date 		string
-	updated_date		string
-	img_file			string
-  }
+	BeerName     string `gorm:"column:name"`
+	TypeID       int    `gorm:"column:type_id"`
+	Description  string `gorm:"column:description"`
+	CreatedDate  string `gorm:"column:created_at"`
+	UpdatedDate  string `gorm:"column:updated_at"`
+	ImgFile      string `gorm:"column:Image"`
+}

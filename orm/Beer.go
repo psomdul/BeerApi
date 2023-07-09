@@ -10,7 +10,7 @@ type Beers struct {
 	beer_name  			string
 	type_id 			int
 	description 		string
-	created_date 		string
-	updated_date		string
+	created_at 		string
+	updated_at		string
 	img_file			string
   }

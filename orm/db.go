@@ -16,4 +16,5 @@ func Dbcon(){
 	
 	  // Migrate the schema
 	  Db.AutoMigrate(&model.Beers{})
+	//   Db.AutoMigrate()
 }
