@@ -2,6 +2,7 @@ package orm
 import(
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
+	"beerapi/model"
 )
 var Db  *gorm.DB	
 var err  error
@@ -14,5 +15,5 @@ func Dbcon(){
 	  }
 	
 	  // Migrate the schema
-	  Db.AutoMigrate(&Beer{})
+	  Db.AutoMigrate(&model.Beers{})
 }

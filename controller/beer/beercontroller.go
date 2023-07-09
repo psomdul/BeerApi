@@ -6,6 +6,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"context"
+	"beerapi/model"
 	// "path/filepath"
 	// "database/sql"
 	// "encoding/json"
@@ -23,14 +24,15 @@ import (
 )
 
 type Beerstruct struct {
-	ID			int	   `json:"beer_id"`
-	Name        string `json:"beer_name"`
-	TypeID      int    `json:"type_id"`
-	Description string `json:"description"`
+	ID          int       `json:"beer_id"`
+	Name        string    `json:"beer_name"`
+	TypeID      int       `json:"type_id"`
+	Description string    `json:"description"`
 	CreatedDate time.Time `json:"created_date"`
 	UpdatedDate time.Time `json:"updated_date"`
-	Image       string `json:"img_file"`
+	Image       string    `json:"image"`
 }
+
 
 
 func GET(c *gin.Context){
@@ -46,7 +48,7 @@ func GET(c *gin.Context){
 		pageSize = 10
 	}
 
-	tableName := "beer"
+	tableName := "beers"
 
 	// SQL query to fetch Data with optional name filter
 	query := orm.Db.Table(tableName)
@@ -60,7 +62,7 @@ func GET(c *gin.Context){
 	offset := (page - 1) * pageSize
 	query = query.Offset(offset).Limit(pageSize)
 
-	// Execute query and retrieve beers
+	// Execute query and retrieve 
 	var beers []Beerstruct
 	query.Find(&beers)
 	response := map[string]interface{}{
@@ -78,18 +80,20 @@ func GET(c *gin.Context){
 func Insert(c *gin.Context){
 	// Parse JSON request body into  struct
 	var beer Beerstruct
+	fmt.Println(c)
 	if err := c.ShouldBindJSON(&beer); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
+	
 
 
 	// Set created and updated dates
-	beer.Image = "testst.jpg"
+	// beer.Image = "testst.jpg"
 	beer.CreatedDate = time.Now()
 	beer.UpdatedDate = time.Now()
-	var BeerExits orm.Beer
-	tableName := "Beer"
+	var BeerExits orm.Beers
+	tableName := "beers"
 
 
 	orm.Db.Table(tableName).Where("name = ?", beer.Name).First(&BeerExits)
@@ -120,7 +124,8 @@ func Insert(c *gin.Context){
 	collection := client.Database("BeerCollection").Collection("Beer_logs")
 	logEntry := bson.M{
 	"action":    "create",
-	"beer_id":   beer.Name,
+	"Beer_id":   beer.ID,
+	"Beer_name": beer.Name,
 	"timestamp": time.Now(),
 	}
 
@@ -133,9 +138,61 @@ func Insert(c *gin.Context){
 }
 
 func Update(c *gin.Context){
-	return
+	var beerInp Beerstruct
+	var BeerExits model.Beers
+	if err := c.ShouldBindJSON(&BeerExits); err != nil {
+		c.JSON(http.StatusBadRequest,gin.H{"error": err.Error()})
+		return
+	}
+
+	orm.Db.First(&BeerExits,beerInp.ID)
+	
+    // c.JSON(http.StatusOK, gin.H{"message": "Beer updated successfully","t":BeerExits.ID,"name":beerInp.Name})
+    // return
+    tableName := "beers"
+    orm.Db.Table(tableName).Where("name =?", beerInp.Name).First(&BeerExits)
+	// BeerExits.beer_name = beerInp.Name
+	// model..beer_name = "test"
+	
+	// BeerExits.DeletedAt = time.Now()
+
+
+
 }
 
 func Delete(c *gin.Context){
-	return
+	beer_id := c.Param("id")
+	
+	var BeerExits orm.Beers
+	tableName := "beers"
+	// SQL query to fetch Data with optional name filter
+	orm.Db.Table(tableName).Where("id = ?", beer_id).First(&BeerExits)
+	if BeerExits.ID <= 0{
+		c.JSON(http.StatusOK,gin.H{"status" : "failed","message":"can not find this id,please try again",})
+		return
+	 }	
+
+	// result :=  orm.Db.Table(tableName).Delete(&beer)
+	orm.Db.First(&BeerExits,beer_id)
+	orm.Db.Delete(&BeerExits)
+
+	 client, err := mongo.Connect(context.Background(), options.Client().ApplyURI(fmt.Sprintf("mongodb://%s:%d", "localhost", 27017)))
+	 if err != nil {
+		 log.Fatal(err)
+	 }
+	 defer client.Disconnect(context.Background())
+ 
+	 collection := client.Database("BeerCollection").Collection("Beer_logs")
+	 logEntry := bson.M{
+	 "action":    "deleted",
+	 "Beer_id":   beer_id,
+	//  "Beer_name": beer.Name,
+	 "timestamp": time.Now(),
+	 }
+ 
+	 _, err = collection.InsertOne(context.Background(), logEntry)
+	 if err != nil {
+		 log.Fatal(err)
+	 }
+	 c.JSON(http.StatusOK, gin.H{"message": "Beer Deleted successfull","Id":BeerExits.ID})
 }
